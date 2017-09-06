@@ -1,0 +1,94 @@
+---
+title: "AutoDx"
+author: "Marius Fersigan"
+date: "September 6, 2017"
+output: #slidy_presentation
+  html_document:
+    theme: united
+    highlight: tango
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    df_print: paged
+    code_folding: hide
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(DT)
+
+
+```
+
+
+
+## Introducere
+
+Această aplicație este un prototip al unui agent automatizat de învățare automată supervizată și generare de aplicații web interactive.
+
+Nu este necesar ca utilizatorul să aibă cunoștiințe de programare, învățare supervizată sau cu privire la dezvoltarea aplicațiilor web interactive.
+
+Se presupune însă că utilizatorul deține suficiente informații despre datele pe care dorește să le utilizeze, astfel încât să poată indica ce fel de model predictiv dorește să fie generat (clasificare sau regresie în cazul de față).
+
+
+## Încărcarea datelor
+
+Prima etapă constă în încărcarea datelor. Datorită faptului că cele mai multe seturi de date utilizate se regăsesc într-un format tabelar, aplicația de față va utiliza CSV (comma separated values) ca format de intrare (în versiuni viitoare se poate realiza suport automat pentru o sumedenie de formate, această particularitate nefăcând parte din scopul aplicației de față).
+
+***
+
+```{r echo = TRUE}
+
+ fileInput("file", "Selecteaza fisierul CSV",
+        accept = c(
+          "text/csv",
+          "text/comma-separated-values,text/plain",
+          ".csv")
+        )
+
+
+```
+
+```{r echo = TRUE}
+DT::renderDataTable({
+  inFile <- input$file
+
+    if (is.null(inFile))
+      return(NULL)
+  
+  read_csv(inFile$datapath, guess_max = 100000)
+  },
+  width = '100%',
+  options = list(
+    scrollX = TRUE,
+    autoWidth = TRUE)
+)
+```
+
+## Explorarea datelor
+
+
+
+
+
+```{r echo = TRUE}
+selectInput("n_breaks", label = "Number of bins:",
+              choices = c(10, 20, 35, 50), selected = 20)
+  
+sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+              min = 0.2, max = 2, value = 1, step = 0.2)
+```
+
+```{r echo = TRUE}
+renderPlot({
+  hist(faithful$eruptions, probability = TRUE, 
+       breaks = as.numeric(input$n_breaks),
+       xlab = "Duration (minutes)", 
+       main = "Geyser eruption duration")
+  
+  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
+  lines(dens, col = "blue")
+})
+```
