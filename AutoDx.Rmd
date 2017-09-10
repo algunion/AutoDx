@@ -5,7 +5,7 @@ date: "September 6, 2017"
 output: #slidy_presentation
   html_document:
     theme: united
-    highlight: tango
+    highlight: espresso
     toc: true
     toc_float: true
     toc_depth: 2
@@ -19,6 +19,38 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(DT)
 
+source("apps/exploreData.R")
+
+
+```
+
+```{r, include = FALSE, echo = FALSE}
+OS_type <- .Platform$OS.type
+# if (OS_type == 'windows'){
+#   winDialog(type = 'ok', 'Te rog sa indici locatia fisierului de incarcat. Click OK pentru a continua.')
+# } else{
+#   print('Te rog sa indici locatia fisierului de incarcat.')
+# }
+
+inputData <- 
+  read_csv(choose.files(multi = FALSE)) %>%
+  as.data.frame
+
+cols_type <- apply(inputData, MARGIN = 2, class)
+
+char_type <- colnames(inputData)[cols_type == "character"]
+int_type = colnames(inputData)[cols_type == "integer"]
+
+
+for(v in char_type)
+{
+   inputData[,v] <- as.factor(inputData[,v])
+}
+
+for (v in int_type)
+{
+  inputData[,v] <- as.numeric(inputData[,v])
+}
 
 ```
 
@@ -37,58 +69,37 @@ Se presupune însă că utilizatorul deține suficiente informații despre datel
 
 Prima etapă constă în încărcarea datelor. Datorită faptului că cele mai multe seturi de date utilizate se regăsesc într-un format tabelar, aplicația de față va utiliza CSV (comma separated values) ca format de intrare (în versiuni viitoare se poate realiza suport automat pentru o sumedenie de formate, această particularitate nefăcând parte din scopul aplicației de față).
 
+În momentul inițierii aplicației aceasta va solicita speicficarea căii fișierului în care sunt conținute datele (elemente de interfață grafice sunt generate automat în funcție de datele introduse).
+
 ***
 
 ```{r echo = TRUE}
-
- fileInput("file", "Selecteaza fisierul CSV",
-        accept = c(
-          "text/csv",
-          "text/comma-separated-values,text/plain",
-          ".csv")
-        )
-
-
-```
-
-```{r echo = TRUE}
 DT::renderDataTable({
-  inFile <- input$file
-
-    if (is.null(inFile))
-      return(NULL)
-  
-  read_csv(inFile$datapath, guess_max = 100000)
+  inputData
   },
   width = '100%',
   options = list(
-    scrollX = TRUE,
-    autoWidth = TRUE)
+    scrollX = TRUE)
 )
 ```
 
 ## Explorarea datelor
 
+```{r, echo=FALSE}
+#observe({
 
 
+rmarkdown::render_delayed({
+exploreData(inputData) 
+})
 
-
-```{r echo = TRUE}
-selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20)
-  
-sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
 ```
 
-```{r echo = TRUE}
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, 
-       breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", 
-       main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
+## Selectarea variabilei *target*
+
+În funcție de variabila pentru care se intenționează crearea modelului predictiv, vom avea fie o problemă de regresie, fie una de clasificare (regresie pentru variabilele numerice și clasificare pentru variabilele nominale/scală).
+
+```{r}
+selectInput(inputId = "target", label = "Selecteaza variabila target", choices = colnames(inputData))
+
 ```

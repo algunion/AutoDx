@@ -1,0 +1,18 @@
+---
+title: Generarea automată de aplicații medicale informatice de diagnosticare
+  folosind metode de meta-programare și programare genetică
+author: "Marius Fersigan"
+date: "September 8, 2017"
+output:
+  word_document:
+    reference_docx: required-styles.docx
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introducere
+
+
