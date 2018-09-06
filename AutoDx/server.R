@@ -11,7 +11,13 @@ library(shiny)
 library(tidyverse)
 library(DataExplorer)
 library(dlookr)
+library(corrplot)
 
+
+
+
+
+options(shiny.maxRequestSize=3000*1024^2) 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   
@@ -22,7 +28,8 @@ shinyServer(function(input, output) {
     
     tryCatch(
       {
-        df <- readr::read_csv(input$selectedFile$datapath, col_names = input$header)
+        df <- readr::read_csv(input$selectedFile$datapath, col_names = input$header, guess_max = 10000)
+        df <- data.frame(df, stringsAsFactors = TRUE)
       },
       error = function(e) {
         # return a safeError if a parsing error occurs
@@ -32,6 +39,19 @@ shinyServer(function(input, output) {
     
     df
   })
+  
+  cols_info <- reactive({
+    req(workingData())
+    
+    col_names <- colnames(workingData())
+    col_types <- sapply(workingData(), class)
+    print(col_types)
+    col_numeric <- col_names[col_types %in% c("integer", "numeric")]
+    col_categ <- col_names[col_types %in% c("character")]
+    
+    list(col_names = col_names, col_types = col_types, col_numeric = col_numeric, col_categ = col_categ)
+  })
+  
    
   output$exploreTable <- DT::renderDataTable({
     
@@ -46,6 +66,7 @@ shinyServer(function(input, output) {
     
     
     DT::datatable(workingData(), options = list(
+      scrollX = TRUE,
       lengthMenu = list(c(10, 20,-1), c('10', '20', 'All')),
       pageLength = 20
     ))
@@ -53,12 +74,39 @@ shinyServer(function(input, output) {
   })
   
   
-  output$eda <- renderTable({
-    describe(workingData())
+  output$eda <- DT::renderDataTable({
+    DT::datatable(describe(workingData()), options = list(
+      scrollX = TRUE,
+      lengthMenu = list(c(10, 20,-1), c('10', '20', 'All')),
+      pageLength = 20
+    ))
+    
+    
   })
   
+  output$selectedNumericalUI <- renderUI({
+    selectInput("selectedNumerical", "Select numerical column", cols_info()$col_numeric, selected = NULL, multiple = FALSE,
+                selectize = TRUE, width = NULL, size = NULL)
+  })
+  
+  output$selectedACategUI <- renderUI({
+    selectInput("selectedCategoricalA", "Select categorical column", cols_info()$col_categ, selected = NULL, multiple = FALSE,
+                selectize = TRUE, width = NULL, size = NULL)
+  })
+  
+  output$selectedBCategUI <- renderUI({
+    selectInput("selectedCategoricalB", "Select target categorical", cols_info()$col_categ, selected = NULL, multiple = FALSE,
+                selectize = TRUE, width = NULL, size = NULL)
+  })
+  
+  
+  
   output$edanorm <- renderPlot({
-    plot_correlate(workingData())
+    plot_normality(workingData(), input$selectedNumerical)
+  })
+  
+  output$categExploration <- renderPlot({
+    # to do
   })
   
 })

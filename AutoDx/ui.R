@@ -36,11 +36,23 @@ shinyUI(fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "tabs",
-                  tabPanel("Explore", DT::dataTableOutput("exploreTable")),
-                  tabPanel("Summary", 
-                           tableOutput("eda"),
-                           plotOutput("edanorm")),
-                  tabPanel("Table", tableOutput("table")))
+                  tabPanel("Show", DT::dataTableOutput("exploreTable")),
+                  tabPanel("Exploratory Analysis", 
+                           h1("Exploratory analysis of dataset"),
+                           DT::dataTableOutput("eda"),
+                           hr(),
+                           h2("Normality inspection of numerical variables"),
+                           fluidRow(
+                             uiOutput("selectedNumericalUI"),
+                             plotOutput("edanorm")),
+                           hr(),
+                           h2("Categorical variables exploration"),
+                           fluidRow(
+                             uiOutput("selectedACategUI"),
+                             uiOutput("selectedBCategUI")
+                           ),
+                           plotOutput("categExploration")),
+                  tabPanel("Model creation", tableOutput("table")))
     )
   )
 ))
